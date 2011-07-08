@@ -13,6 +13,7 @@ p_message control_message[] ="Control :";
 #define CS_PIN 5
 #define DIR_PIN 6
 #define STEP_PIN 7
+#define ENABLE_PIN 8
 
 //every second we reduce the value
 Metro reduceMetro = Metro(1000);
@@ -20,6 +21,15 @@ Metro reduceMetro = Metro(1000);
 TMC262Stepper tmc262Stepper = TMC262Stepper(STEPS,CS_PIN,DIR_PIN,STEP_PIN,400);
 
 void setupBalloon() {
+  //set the pins as outputs
+  pinMode(CS_PIN,OUTPUT);
+  pinMode(DIR_PIN,OUTPUT);
+  pinMode(STEP_PIN,OUTPUT);
+  pinMode(ENABLE_PIN,OUTPUT);
+
+  //enable the driver
+  digitalWrite(ENABLE_PIN, LOW);
+
   //set this according to you stepper
   tmc262Stepper.setSpreadCycleChopper(2,24,6,0,1);
   tmc262Stepper.setRandomOffTime(1);
@@ -51,10 +61,10 @@ void loopBalloon(char newAnswers) {
   if (difference!=0) {
     /*
     Serial.print("Level: ");
-    Serial.print(scaled_level);
-    Serial.print(" Diff: ");
-    Serial.println(difference);
-    */
+     Serial.print(scaled_level);
+     Serial.print(" Diff: ");
+     Serial.println(difference);
+     */
     long way = abs(difference);
     int steps = (int) min(way,100l);
     if (difference<0) {
@@ -85,6 +95,7 @@ long scale(long scaling_level) {
    */
   return result;
 }
+
 
 
 
