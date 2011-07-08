@@ -10,10 +10,14 @@ p_message control_message[] ="Control :";
 #define MAX_LEVEL (STEPS*MICRO_STEPS*35.0)
 #define TWEET_WEIGHT 30
 
+#define CS_PIN 5
+#define DIR_PIN 6
+#define STEP_PIN 7
+
 //every second we reduce the value
 Metro reduceMetro = Metro(1000);
 
-TMC262Stepper tmc262Stepper = TMC262Stepper(STEPS,5,6,7,400);
+TMC262Stepper tmc262Stepper = TMC262Stepper(STEPS,CS_PIN,DIR_PIN,STEP_PIN,400);
 
 void setupBalloon() {
   //set this according to you stepper
