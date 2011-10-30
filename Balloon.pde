@@ -42,8 +42,11 @@ void setupBalloon() {
 long level=0;
 //in scaled
 long current_level = 0;
-void loopBalloon(char newAnswers) {
+void addAnswerToBalloon(char newAnswers) {
   level+=newAnswers*TWEET_WEIGHT;
+}
+
+void loopBalloon() {
   if (reduceMetro.check()) {
     level--;
     if (level<=0) {

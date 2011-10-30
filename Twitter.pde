@@ -11,74 +11,139 @@ p_message twitter_resolving_message2[]=" ...\n";
 p_message twitter_timeout_message[]="Timed out!\n";
 p_message twitter_not_found_message[]="Not found!\n";
 p_message twitter_error_message[]="Failed with error: ";
+p_message twitter_found_message[]="Found Tweet";
 
-const char twitter_search[] = "stream.twitter.com";
+const char twitter_search[] = "search.twitter.com";
 uint8_t twitter_search_ip[4];
 
 Client client(twitter_search_ip, 80);
+p_message http_preamble[] = "GET /search.atom?rpp=1&q=";
+p_message http_end[] = " HTTP/1.1\nHost: search.twitter.com\n";
 
-char decodeAnswer(char* answer);
+char falseChar = '~';                       //This is the charachter returned if a test is False 
+                                            //(use a charachter you will not encounter) 
+long timeout = 3000;   //This is the number of repeats run before a timeout is assummed
+                       //The way it is implemented this is also the charachter limit for the
+                      //webpage you are requesting
+                      char id[] = "id>tag:search.twitter.com,2005:"; //The leading charachters to omit from the ID 
+//(will have issues with overflowing)
 
-char* searchquery;
 
-char last_id[16]="0";
-//http://stream.twitter.com/1/statuses/filter.json?track=json
-p_message http_preamble[] = "GET /1/statuses/filter.json?track=";
-p_message http_end[] = " HTTP/1.1\nHost: stream.twitter.com\nAccept: application/json\nAuthorization: Basic cGFsb2FsdG9uYWxlOmdvb2RsYWNr\n\n";
+//last Id we have seen
+unsigned long lastID = 0;
 
-char searchTwitter(char* query) {
-  lookupHosts();
+//////////////////////////
+//  Connects to Twitter Search and sends a search request
+//////////////////////////
+void startSearchTwitter(char* term){
   printProgStr(twitter_search_message);
-  searchquery = query;
+  lookupHosts();
+
+  if (client.connect()) {
+    printProgStr(twitter_connect_message);
+    printProgStr(http_preamble);
+    sendProgStr(&client,http_preamble);
+    Serial.print(term);
+    client.print(term);
+    printProgStr(http_end);
+    sendProgStr(&client,http_end);
+    client.println();
+  } 
+  else {
+    printProgStr(twitter_connect_failed_message);
+  } 
 }
 
-char searchTwitterForAnswers() {
-  char answers = -1;
-  if (!client.connected()) {
-    if (client.connect()) {
-      printProgStr(twitter_connect_message);
-      printProgStr(http_preamble);
-      sendProgStr(&client,http_preamble);
-      Serial.print(searchquery);
-      client.print(searchquery);
-      printProgStr(http_end);
-      sendProgStr(&client,http_end);
-      client.println();
-    } 
-    else {
-      printProgStr(twitter_connect_failed_message);
-      return 0;
+
+
+
+
+
+//////////////////////////
+//  Iterates through the returned XML
+//////////////////////////
+int processSearchTwitter(){
+  int idCount = 0;                             //how many IDs have we encoutered?
+
+
+  ///////////////////////////////////////
+  //---bof-- XML Parsing
+  ///////////////////////////////////////
+  if (client.available()) {                   //If there is available data
+    boolean printTweet = false;               //by default we will not print the returned tweet (later we check if it is newer than the last tweet
+    char c=0;
+    for(long i = 0; (i < timeout * 100) && (c!=EOF); i++){  //We will iterate through the data timeout times (3000) this limits the length of a page that can
+      //be iterated through to that many charachters
+      //(not very good style)
+
+      c = client.read();                 //Read the next charachter into memory
+      Serial.print(c);
+
+      //ID ID ID ID ID////////////////////////////////////
+      ///////Test to see if the ID Tag has been opened
+      ///////////////////////////////////////////////////
+      char cc = testXMLTag(client, c, id, sizeof(id));   //Test the ID tag
+      if(cc != falseChar){                               //if the ID tag has been found, a non false charachter will be returned and we move into loading the d
+          long tempLastID = loadID(c);                   //We pass the charachter to a routine that reads all the charachters of the ID number and turns it into an unisgmn
+            if(tempLastID > lastID){                       //If the newly discovered ID is greater than the ID of the last tweet we typed
+            idCount++;                             //we have found a tweet
+            lastID = tempLastID;                           //set this tweets ID as the new ID
+            printProgStr(twitter_found_message);
+          }
+      }
+      ///////////////////////////////////////
+      //---eof-- XML Parsing
+      ///////////////////////////////////////
     }
   }
-  unsigned int pos = 0;            
-  //ok we are conected it seems
-  while(client.available() && pos<TWITTER_MAX_LENGTH) {
-    char c = client.read();
-    //Serial.print(c);
-    querybuffer[pos]=c;
-    pos++;
-  }
-  querybuffer[pos]=0;
-  //Serial.print(querybuffer);
-  answers = decodeAnswer(querybuffer);
-  if (answers>0) {
-    Serial.print("answers: ");
-    Serial.println(answers,DEC);
-  }
-  return answers;
+
+      if (!client.connected()) {             //Disconnect the client
+        Serial.println();
+        Serial.println("disconnecting.");
+        client.stop();
+        //for(;;);
+      }
+  return idCount;
 }
 
+//////////////////////////
+//  Test to see if a XML Tag has been encountered (testString is the tag we searching for) will return a false charachter if not encountered
+//  or the next charachter in the buffer if it has been encountered
+//  (not a very good implementation as all charachters tested must be unique (ie no two tags in the same search sequence can start with the same charachter)
+//////////////////////////
 
-const char* id_pattern = "\"text\"";
-char decodeAnswer(char* answer) {
-  unsigned char count = 0;
-  char* id_tok = strstr(answer,id_pattern);
-  while (id_tok!=NULL) {
-    count++;
-    id_tok = strstr(id_tok+1,id_pattern);
-  }
-  return count;    
+
+char testXMLTag(Client client2, char c, char* testString, int length){
+  char returnValue = falseChar;       //default the return charachter to the false charachter
+  for(int i = 0; i < length-1; i++){  //iterate through the length of the test string
+    if(c == testString[i]){           //If the current charachter matches the charachter at index i 
+      c = client2.read();               //read the next charachter to test 
+    }
+    else{                             //If it doesn't match
+      i = length;                       //Stop testing
+    }
+
+    if(i == length-2){                //If we have reached the length of the testString
+      returnValue = c;                  //set the return value to the last read charachter
+    }
+  } 
+  return returnValue;                 //return a false charachter if the tag has not been found or the next charachter in the buffer if it has been found
 }
+
+//////////////////////////
+//  Once an ID tag has been encountered the buffer gets sent here this will read the next 8 charachters and convert them into
+//  an unsigned long
+//////////////////////////
+long loadID(char c) {
+  long tempLastID = 0;                              //Start at zero
+  for(int i = 9; i >= 0; i--) {                      //iterate through the next 8 characheters (assumes an ID in the billion range
+    int temp = (int)c-48;                           //convert the ASCii code to a number (ie. ASCII for '1' = 49)
+    tempLastID = tempLastID + (temp * pow(10,i));   //Add the number to the appropriate power
+    c = client.read();                              //Move to the next charachter
+  }
+  return tempLastID;                                //Return the discovered long
+}
+
 
 char lookupHosts() {
   printProgStr(twitter_resolving_message1);
@@ -112,8 +177,6 @@ char lookupHosts() {
     Serial.println((int)err, DEC);
   }
 }
-
-
 
 
 

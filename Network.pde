@@ -8,7 +8,7 @@ p_message dns_server_message[]="DNS Server: ";
 
 uint8_t mac[] = { 
   0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-  
+
 //we want to renew the dns every 30 minutes
 
 char setupNetwork() {
@@ -67,5 +67,6 @@ void startDNS() {
   // default, the DNS server IP is set to one of Google's public DNS servers.
   EthernetDNS.setDNSServer(EthernetDHCP.dnsIpAddress());
 }
+
 
 

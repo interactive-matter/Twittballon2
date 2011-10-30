@@ -32,7 +32,6 @@ void setup()
   Serial.println(freeRam());
   setupNetwork();
   Serial.println(freeRam());
-  char current_tweets = searchTwitter(search_term);
 }
 
 float twitter_count = 0;
@@ -42,8 +41,13 @@ char buf[2];
 void loop()
 {
   loopNetwork();
-  char answers= searchTwitterForAnswers();
-  loopBalloon(answers);
+  if (twitterMetro.check()) {
+    startSearchTwitter(search_term);
+    delay(1000);                       //Waits a second for a response
+    char answers= processSearchTwitter();
+    addAnswerToBalloon(answers);
+  }
+  loopBalloon();
 }
 
 int freeRam () {
@@ -51,6 +55,8 @@ int freeRam () {
   int v; 
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
 }
+
+
 
 
 
