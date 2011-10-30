@@ -7,8 +7,7 @@ p_message control_message[] ="Control :";
 
 #define MICRO_STEPS 16
 #define STEPS 200
-#define MAX_LEVEL (STEPS*MICRO_STEPS*35.0)
-#define TWEET_WEIGHT 100
+#define MAX_LEVEL (STEPS*MICRO_STEPS*MAX_TURNS)
 
 #define TMC_CS_PIN 2
 #define TMC_DIR_PIN 6

@@ -1,19 +1,30 @@
 #include <Ethernet.h>
 #include <Metro.h>
 #include <SPI.h>
-
+#include <Messenger.h>
+#include <EthernetBonjour.h>
+#include <Ciao.h>
 #include <avr/pgmspace.h>
 #define p_message const prog_char PROGMEM
 
-#define TURNS_PER_TWEET 1
+////////////////////////////////////////////////////////////
+///              MAIN CONFIGURATION                      ///
+////////////////////////////////////////////////////////////
 
-void printIp(const uint8_t*);
+//what to search for
+char* search_term ="sonne";
+//how much turns is it to the top, please include a .0 at the end
+#define MAX_TURNS 35.0
+//how much is the value of a tweet if the balloon stays on top reduce, if the balloon goaes down to fast increase
+#define TWEET_WEIGHT 100
+
+/////////////////////////////////////////////////////////////
+
 
 p_message answer_message[] = "Answers: ";
 p_message level_message[] = "Level: ";
 
 
-char* search_term ="hamburg";
 int targetCount = 0;
 
 int currentCount = 0;
@@ -33,6 +44,7 @@ void setup()
   setupNetwork();
   Serial.println(freeRam());
   setupTwitter();
+  Serial.println(freeRam());
 }
 
 float twitter_count = 0;
