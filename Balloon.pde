@@ -5,10 +5,10 @@ p_message target_message1[] = "Target: ";
 p_message target_message2[] = ", Current: ";
 p_message control_message[] ="Control :";
 
-#define MICRO_STEPS 4
+#define MICRO_STEPS 16
 #define STEPS 200
 #define MAX_LEVEL (STEPS*MICRO_STEPS*35.0)
-#define TWEET_WEIGHT 30
+#define TWEET_WEIGHT 600
 
 #define TMC_CS_PIN 2
 #define TMC_DIR_PIN 6
@@ -18,7 +18,7 @@ p_message control_message[] ="Control :";
 //every second we reduce the value
 Metro reduceMetro = Metro(1000);
 
-TMC262Stepper tmc262Stepper = TMC262Stepper(STEPS,TMC_CS_PIN,TMC_DIR_PIN,TMC_STEP_PIN,800);
+TMC262Stepper tmc262Stepper = TMC262Stepper(STEPS,TMC_CS_PIN,TMC_DIR_PIN,TMC_STEP_PIN,400);
 
 void setupBalloon() {
   //set the pins as outputs

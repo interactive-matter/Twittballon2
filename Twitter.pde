@@ -11,13 +11,15 @@ p_message twitter_resolving_message2[]=" ...\n";
 p_message twitter_timeout_message[]="Timed out!\n";
 p_message twitter_not_found_message[]="Not found!\n";
 p_message twitter_error_message[]="Failed with error: ";
-p_message twitter_found_message[]="Found Tweet";
+p_message twitter_found_message[]="Found Tweet ";
+p_message twitter_seen_message[]="Seen Tweet ";
 
 const char twitter_search[] = "search.twitter.com";
 uint8_t twitter_search_ip[4];
 
 Client client(twitter_search_ip, 80);
 p_message http_preamble[] = "GET /search.atom?rpp=1&q=";
+p_message http_second[] = "&since_id=";
 p_message http_end[] = " HTTP/1.1\nHost: search.twitter.com\n";
 
 char falseChar = '~';                       //This is the charachter returned if a test is False 
@@ -45,6 +47,10 @@ void startSearchTwitter(char* term){
     sendProgStr(&client,http_preamble);
     Serial.print(term);
     client.print(term);
+    printProgStr(http_second);
+    sendProgStr(&client,http_second);
+    Serial.print(lastID);
+    client.print(lastID);
     printProgStr(http_end);
     sendProgStr(&client,http_end);
     client.println();
@@ -69,15 +75,12 @@ int processSearchTwitter(){
   ///////////////////////////////////////
   //---bof-- XML Parsing
   ///////////////////////////////////////
-  if (client.available()) {                   //If there is available data
+  if (client.connected()) {                   //If there is available data
     boolean printTweet = false;               //by default we will not print the returned tweet (later we check if it is newer than the last tweet
     char c=0;
-    for(long i = 0; (i < timeout * 100) && (c!=EOF); i++){  //We will iterate through the data timeout times (3000) this limits the length of a page that can
-      //be iterated through to that many charachters
-      //(not very good style)
+    while (client.connected()) {
 
       c = client.read();                 //Read the next charachter into memory
-      Serial.print(c);
 
       //ID ID ID ID ID////////////////////////////////////
       ///////Test to see if the ID Tag has been opened
@@ -89,6 +92,10 @@ int processSearchTwitter(){
             idCount++;                             //we have found a tweet
             lastID = tempLastID;                           //set this tweets ID as the new ID
             printProgStr(twitter_found_message);
+            Serial.println(lastID);
+          } else {
+                        printProgStr(twitter_seen_message);
+            Serial.println(lastID);
           }
       }
       ///////////////////////////////////////
