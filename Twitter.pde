@@ -17,6 +17,10 @@ p_message twitter_seen_message[]="Seen Tweet ";
 const char twitter_search[] = "search.twitter.com";
 uint8_t twitter_search_ip[4];
 
+#define TWITTER_ID_LENGTH 24
+char lastID[TWITTER_ID_LENGTH];
+char currentID[TWITTER_ID_LENGTH];
+
 Client client(twitter_search_ip, 80);
 p_message http_preamble[] = "GET /search.atom?rpp=1&q=";
 p_message http_second[] = "&since_id=";
@@ -31,8 +35,12 @@ long timeout = 3000;   //This is the number of repeats run before a timeout is a
 //(will have issues with overflowing)
 
 
-//last Id we have seen
-unsigned long lastID = 0;
+void setupTwitter() {
+  for (int i=0; i<TWITTER_ID_LENGTH; i++) {
+    lastID[i]=0;
+    currentID[i]=0;
+  }
+}
 
 //////////////////////////
 //  Connects to Twitter Search and sends a search request
@@ -49,8 +57,8 @@ void startSearchTwitter(char* term){
     client.print(term);
     printProgStr(http_second);
     sendProgStr(&client,http_second);
-    Serial.print(lastID);
-    client.print(lastID);
+    Serial.print(currentID);
+    client.print(currentID);
     printProgStr(http_end);
     sendProgStr(&client,http_end);
     client.println();
@@ -87,15 +95,15 @@ int processSearchTwitter(){
       ///////////////////////////////////////////////////
       char cc = testXMLTag(client, c, id, sizeof(id));   //Test the ID tag
       if(cc != falseChar){                               //if the ID tag has been found, a non false charachter will be returned and we move into loading the d
-          long tempLastID = loadID(c);                   //We pass the charachter to a routine that reads all the charachters of the ID number and turns it into an unisgmn
-            if(tempLastID > lastID){                       //If the newly discovered ID is greater than the ID of the last tweet we typed
+          loadID(cc);                   //We pass the charachter to a routine that reads all the charachters of the ID number and turns it into an unisgmn
+            if(strcmp(currentID,lastID)){                       //If the newly discovered ID is greater than the ID of the last tweet we typed
             idCount++;                             //we have found a tweet
-            lastID = tempLastID;                           //set this tweets ID as the new ID
+            strcpy(lastID,currentID);                           //set this tweets ID as the new ID
             printProgStr(twitter_found_message);
             Serial.println(lastID);
           } else {
-                        printProgStr(twitter_seen_message);
-            Serial.println(lastID);
+            printProgStr(twitter_seen_message);
+            Serial.println(currentID);
           }
       }
       ///////////////////////////////////////
@@ -124,7 +132,7 @@ char testXMLTag(Client client2, char c, char* testString, int length){
   char returnValue = falseChar;       //default the return charachter to the false charachter
   for(int i = 0; i < length-1; i++){  //iterate through the length of the test string
     if(c == testString[i]){           //If the current charachter matches the charachter at index i 
-      c = client2.read();               //read the next charachter to test 
+      c = client2.read();        //read the next charachter to test 
     }
     else{                             //If it doesn't match
       i = length;                       //Stop testing
@@ -141,14 +149,13 @@ char testXMLTag(Client client2, char c, char* testString, int length){
 //  Once an ID tag has been encountered the buffer gets sent here this will read the next 8 charachters and convert them into
 //  an unsigned long
 //////////////////////////
-long loadID(char c) {
+void loadID(char c) {
   long tempLastID = 0;                              //Start at zero
-  for(int i = 9; i >= 0; i--) {                      //iterate through the next 8 characheters (assumes an ID in the billion range
-    int temp = (int)c-48;                           //convert the ASCii code to a number (ie. ASCII for '1' = 49)
-    tempLastID = tempLastID + (temp * pow(10,i));   //Add the number to the appropriate power
+  for (int i=0; c>='0' && c<='9' && i < TWITTER_ID_LENGTH-1;i++) {                      //read all numbers
+    currentID[i]=c;
+    currentID[i+1]=0;
     c = client.read();                              //Move to the next charachter
   }
-  return tempLastID;                                //Return the discovered long
 }
 
 

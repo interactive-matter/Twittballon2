@@ -13,14 +13,14 @@ p_message answer_message[] = "Answers: ";
 p_message level_message[] = "Level: ";
 
 
-char* search_term ="sonne";
+char* search_term ="hamburg";
 int targetCount = 0;
 
 int currentCount = 0;
 
 
 //we want to request ever 30 seconds
-Metro twitterMetro = Metro(30l*1000l,1);
+Metro twitterMetro = Metro(15l*1000l,1);
 //we update once a second
 Metro updateMetro = Metro(1000,1);
 
@@ -32,6 +32,7 @@ void setup()
   Serial.println(freeRam());
   setupNetwork();
   Serial.println(freeRam());
+  setupTwitter();
 }
 
 float twitter_count = 0;
