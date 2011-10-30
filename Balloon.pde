@@ -5,12 +5,12 @@ p_message target_message1[] = "Target: ";
 p_message target_message2[] = ", Current: ";
 p_message control_message[] ="Control :";
 
-#define MICRO_STEPS 4.0
-#define STEPS 200.0
+#define MICRO_STEPS 4
+#define STEPS 200
 #define MAX_LEVEL (STEPS*MICRO_STEPS*35.0)
 #define TWEET_WEIGHT 30
 
-#define TMC_CS_PIN A2
+#define TMC_CS_PIN 2
 #define TMC_DIR_PIN 6
 #define TMC_STEP_PIN 7
 #define TMC_ENABLE_PIN 8
@@ -31,14 +31,11 @@ void setupBalloon() {
   digitalWrite(TMC_ENABLE_PIN, LOW);
 
   //set this according to you stepper
-  tmc262Stepper.setSpreadCycleChopper(0,0,14,18,1);
-  //tmc262Stepper.setConstantOffTimeChopper(7, 54, 13,12,1);
-  tmc262Stepper.setRandomOffTime(1);
+  tmc262Stepper.setSpreadCycleChopper(2,24,8,6,0);
+  tmc262Stepper.setRandomOffTime(0);
   tmc262Stepper.setMicrosteps(MICRO_STEPS);
   tmc262Stepper.setSpeed(300);
-while(1) {
   tmc262Stepper.start();
-}
 }
 
 //the current level
@@ -96,7 +93,4 @@ long scale(long scaling_level) {
    */
   return result;
 }
-
-
-
 

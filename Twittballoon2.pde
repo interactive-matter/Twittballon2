@@ -27,8 +27,11 @@ Metro updateMetro = Metro(1000,1);
 void setup()
 {
   Serial.begin(9600);
+  Serial.println(freeRam());
   setupBalloon();
+  Serial.println(freeRam());
   setupNetwork();
+  Serial.println(freeRam());
   char current_tweets = searchTwitter(search_term);
 }
 
@@ -43,7 +46,11 @@ void loop()
   loopBalloon(answers);
 }
 
-
+int freeRam () {
+  extern int __heap_start, *__brkval; 
+  int v; 
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+}
 
 
 
